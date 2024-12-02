@@ -1,0 +1,11 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: Eco-Tech-monitor
+spec:
+  selector:
+    matchLabels:
+      app: Eco-Tech
+  endpoints:
+  - port: http
+    path: /metrics
