@@ -1,0 +1,16 @@
+{
+  "name": "eco-tech",
+  "version": "1.0.0",
+  "description": "A cloud-native microservice example",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "pg": "^8.13.1",
+    "prom-client": "^14.0.1"
+  }
+}

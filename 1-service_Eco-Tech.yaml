@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: Eco-Tech-service
+  labels:
+    app: Eco-Tech
+spec:
+  type: LoadBalancer
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 3001
+  selector:
+    app: Eco-Tech
+    #este serviço vai encaminhar os requests da porta 80 para 3001

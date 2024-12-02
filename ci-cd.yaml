@@ -1,0 +1,101 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-test-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22.11.0'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build Docker image
+        run: docker build -t myrepo/eco-tech:${{ github.sha }} .
+
+      - name: Push Docker image
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+          docker push myrepo/eco-tech:${{ github.sha }}
+
+      - name: Deploy to Kubernetes
+        run: kubectl apply -f k8s/eco-teh-deployment.yml
+
+# 2º opção CI/CD
+#name: Eco-Tech CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checar o código do repositório
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      # 2. Configurar Node.js (ou outra tecnologia usada no projeto)
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22.11.0' # Ajuste para a versão que você usa
+
+      # 3. Instalar dependências
+      - name: Install dependencies
+        run: npm install
+
+      # 4. Executar testes
+      - name: Run tests
+        run: npm test
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      # 1. Checar o código do repositório
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      # 2. Fazer o build (se necessário)
+      - name: Build application
+        run: npm run build
+
+      # 3. Deploy para servidor (exemplo com SSH)
+      - name: Deploy to Server
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        run: |
+          ssh -i "${{ secrets.DEPLOY_KEY }}" ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
+          cd /var/www/eco-tech
+          git pull origin main
+          npm install
+          npm run start
+          EOF
