@@ -1,13 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: postgresql-service
+  name: postgres-eco-tech
   labels:
-    app: postgresql
+    app: postgres-eco-tech
 spec:
+  type: NodePort
   ports:
     - port: 5432
       targetPort: 5432
-  clusterIP: None  # This ensures that each pod has its own stable DNS entry (for StatefulSets)
+      nodePort: 30007
+  #clusterIP:   # This ensures that each pod has its own stable DNS entry (for StatefulSets)
   selector:
-    app: postgresql
+    app: postgres-eco-tech
