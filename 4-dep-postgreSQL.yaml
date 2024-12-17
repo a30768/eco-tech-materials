@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: postgresql
+  name: postgres-eco-tech
   labels:
-    app: postgresql
+    app: postgres-eco-tech
 spec:
   serviceName: "postgresql"
   replicas: 1
   selector:
     matchLabels:
-      app: postgresql
+      app: postgres-eco-tech
   template:
     metadata:
       labels:
-        app: postgresql
+        app: postgres-eco-tech
     spec:
       containers:
-        - name: postgresql
+        - name: postgres-eco-tech
           image: postgres:latest
           env:
             - name: POSTGRES_USER
