@@ -57,7 +57,3 @@ jobs:
         run: |
           kubectl apply -f ${{ env.K8S_DEPLOYMENT_FILE }}
           kubectl apply -f ${{ env.K8S_SERVICE_FILE }}
-          git pull origin main
-          npm install
-          npm run start
-          EOF
