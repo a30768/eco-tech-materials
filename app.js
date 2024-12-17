@@ -1,7 +1,24 @@
 const express = require('express');
 const { Pool } = require('pg');
 const client = require('prom-client');
+const bcrypt = require('bcrypt'); 
 
+
+const dotenv = require('dotenv');
+
+// Carregar variáveis do arquivo .env
+dotenv.config();
+
+// Exemplo de uso das variáveis de ambiente
+const port = process.env.APP_PORT || 3000;
+const dbHost = process.env.DB_HOST;
+const dbUser = process.env.DB_USERNAME;
+const dbPass = process.env.DB_PASSWORD;
+const dbName = process.env.DB_NAME;
+const dbPort = process.env.DB_PORT;
+
+
+console.log('env',dbHost)
 // Configuração básica do Prometheus
 const collectDefaultMetrics = client.collectDefaultMetrics;
 collectDefaultMetrics();
@@ -11,11 +28,11 @@ app.use(express.json());
 
 // Configuração da conexão
 const pool = new Pool({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'postgres',
-    password: 'eco-techmaterials',
-    port: 5432,
+    user: dbUser,
+    host: dbHost,
+    database: dbName,
+    password: dbPass,
+    port: dbPort
 });
 
 // Testando a conexão
@@ -38,7 +55,7 @@ async function getCustomers() {
 }
 
 // Chamada de teste
-getCustomers();
+// getCustomers();
 
 // Endpoints
 app.get('/customers', async (req, res) => {
@@ -48,6 +65,11 @@ app.get('/customers', async (req, res) => {
 
 app.get('/employees', async (req, res) => {
   const result = await pool.query('SELECT * FROM employee');
+  res.json(result.rows);
+});
+
+app.get('/users', async (req, res) => {
+  const result = await pool.query('SELECT * FROM user');
   res.json(result.rows);
 });
 
@@ -86,50 +108,125 @@ app.post('/newEmployee', async (req, res) => {
 });
 
 app.post('/newRequest', async (req, res) => {
-  const { customer_id, description } = req.body;
+  const { request_id, customercustomer_id } = req.body;
   const result = await pool.query(
-    'INSERT INTO request (customer_id, description) VALUES ($1, $2) RETURNING *',
-    [customer_id, description]
+    'INSERT INTO request (request_id, customercustomer_id) VALUES ($1, $2) RETURNING *',
+    [request_id, customercustomer_id]
   );
   res.json(result.rows[0]);
 });
 
-app.post('/quotes', async (req, res) => {
-  const { request_id, total_amount } = req.body;
+app.post('/newQuote', async (req, res) => {
+  const { quote_id, requestrequest_id } = req.body;
   const result = await pool.query(
-    'INSERT INTO quote (request_id, total_amount) VALUES ($1, $2) RETURNING *',
-    [request_id, total_amount]
+    'INSERT INTO quote (quote_id, requestrequest_id) VALUES ($1, $2) RETURNING *',
+    [quote_id, requestrequest_id]
   );
   res.json(result.rows[0]);
 });
 
-app.post('/orders', async (req, res) => {
-  const { customer_id, order_date, total_amount } = req.body;
+app.post('/newOrder', async (req, res) => {
+  const { sales_order_id, quotequote_id } = req.body;
   const result = await pool.query(
-    'INSERT INTO sales_order (customer_id, order_date, total_amount) VALUES ($1, $2, $3) RETURNING *',
-    [customer_id, order_date, total_amount]
+    'INSERT INTO sales_order (sales_order_id, quotequote_id) VALUES ($1, $2, $3) RETURNING *',
+    [sales_order_id, quotequote_id]
   );
   res.json(result.rows[0]);
 });
 
+//Put Operations 
+//Edit Password
 
-app.put('/orders/:id/status', async (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body;
-  const result = await pool.query(
-    'UPDATE sales_order SET status = $1 WHERE id = $2 RETURNING *',
-    [status, id]
-  );
-  res.json(result.rows[0]);
+
+// PUT Atualizar Senha de Users
+app.put('/"users-eco-tech"/:user_id/password', async (req, res) => {
+  const { user_id } = req.body;
+  const { password } = req.body;
+
+  if (!user_id) return res.status(400).send('User ID is required');
+  if (!password) return res.status(400).send('Password is required');
+
+  try {
+    // Hash a nova senha
+    const hashedPassword = await bcrypt.hash(password, 10); // 10 é o salt rounds
+    const result = await pool.query(
+      'UPDATE "users-eco-tech" SET password = $1 WHERE user_id = $2 RETURNING *',
+      [hashedPassword, user_id] // Corrigido para passar os parâmetros corretos
+    );
+
+    if (result.rows.length === 0) return res.status(404).send('User not found');
+    res.status(200).json({ message: 'Password updated successfully', data: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Erro ao atualizar a senha do utilizador');
+  }
 });
 
 
-app.delete('/orders/:id', async (req, res) => {
-  const { id } = req.params;
-  await pool.query('DELETE FROM sales_order WHERE id = $1', [id]);
-  res.sendStatus(204);
+//Delete Operations
+// Delete customer by customer_id
+app.delete('/customer/:customer_id', async (req, res) => {
+  const { customer_id } = req.params;
+
+  // Validate if customer_id is provided
+  if (!customer_id) {
+    return res.status(400).json({ error: 'Customer ID is required' });
+  }
+
+  try {
+    console.log(`DELETE request received for customer_id: ${customer_id}`);
+
+    // Query to delete the user by customer_id
+    const result = await pool.query(
+      'DELETE FROM "customer" WHERE customer_id = $1 RETURNING *',
+      [customer_id]
+    );
+
+    // Check if a customer was found and deleted
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Respond with success
+    res.status(200).json({
+      message: 'User deleted successfully',
+      deletedCustomer: result.rows[0], // Optional: Return deleted user details
+    });
+  } catch (err) {
+    console.error('Error while deleting customer:', err);
+    res.status(500).json({ error: 'Failed to delete customer' });
+  }
 });
 
+
+// Função PUT para atualizar um cliente pelo customer_id
+app.put('/updateCustomer/:customer_id', async (req, res) => {
+  const { customer_id } = req.params;
+  const { useruser_id } = req.body;
+
+  try {
+    // Verifica se o cliente existe antes de tentar atualizar
+    const checkCustomer = await pool.query(
+      'SELECT * FROM customer WHERE customer_id = $1',
+      [customer_id]
+    );
+
+    if (checkCustomer.rows.length === 0) {
+      return res.status(404).json({ error: 'Cliente não encontrado' });
+    }
+
+    // Atualiza o cliente
+    const result = await pool.query(
+      'UPDATE customer SET useruser_id = $1 WHERE customer_id = $2 RETURNING *',
+      [useruser_id, customer_id]
+    );
+
+    res.json({ message: 'Cliente atualizado com sucesso', customer: result.rows[0] });
+  } catch (err) {
+    console.error('Erro ao atualizar o cliente:', err.stack);
+    res.status(500).json({ error: 'Erro ao atualizar o cliente' });
+  }
+});
 
 // Health Check
 app.get('/health', (req, res) => res.status(200).send('OK'));
@@ -139,20 +236,6 @@ app.get('/metrics', async (req, res) => {
   res.set('Content-Type', client.register.contentType);
   res.end(await client.register.metrics());
 });
-
-app.listen(3001, () => console.log('Eco-Tech service is running'));
-//app.listen(3002, () => console.log('Request for Proposal service is running'));
-//app.listen(3003, () => console.log('Sales Orders Management service is running'));
-
-const dotenv = require('dotenv');
-
-// Carregar variáveis do arquivo .env
-dotenv.config();
-
-// Exemplo de uso das variáveis de ambiente
-const port = process.env.APP_PORT || 3000;
-const dbHost = process.env.DB_HOST;
-const dbUser = process.env.DB_USERNAME;
 
 // Log para verificar se as variáveis foram carregadas
 console.log(`Servidor rodando na porta ${port}`);
@@ -166,16 +249,3 @@ app.listen(port, () => {
   console.log(`Aplicação rodando em http://localhost:${port}`);
 });
 
-//VERSÃO ANTERIOR  de carregamento variáveis ambiente:
-
-//const dotenv = require('dotenv');
-
-// Carrega o arquivo .env
-//dotenv.config();
-
-// Acessa as variáveis de ambiente
-//const port = process.env.APP_PORT || 3000;
-//const dbHost = process.env.DB_HOST;
-//const dbUser = process.env.DB_USERNAME;
-
-//console.log(`Iniciando na porta ${port}`);
