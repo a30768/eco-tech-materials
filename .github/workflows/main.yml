@@ -12,7 +12,7 @@ jobs:
     env:
       APP_NAME: eco-tech
       DOCKER_IMAGE: a30768/eco-tech-materials:latest  # Substitua com seu DockerHub user/repo
-      K8S_DEPLOYMENT_FILE: ./1-Deployment.yaml
+      K8S_DEPLOYMENT_FILE: ./1-deployment.yaml
       K8S_SERVICE_FILE: ./2-service.yaml
 
     steps:
