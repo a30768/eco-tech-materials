@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eco-tech
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eco-tech
+  template:
+    metadata:
+      labels:
+        app: eco-tech
+    spec:
+      containers:
+      - name: eco-tech
+        image: a30768/eco-tech-materials:latest # Substitua 'latest' pela tag correta da sua imagem, se necessário
+        imagePullPolicy: Never
+        env:
+          - name: DB_HOST
+            value: "postgres-eco-tech"
+          - name: DB_USER
+            value: "postgres"
+          - name: DB_PASSWORD
+            value: "eco-techmaterials"
+          - name: DB_NAME
+            value: "postgres"
+          - name: DB_PORT
+            value: "5432"
+        
+        ports:
+        - containerPort: 3001
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "250m"
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+
+# ANTES
+    # resources:
+          #limits:
+           # memory: "512Mi"
+            #cpu: "500m"
+          #requests:
+           # memory: "256Mi"
+            #cpu: "250m"
