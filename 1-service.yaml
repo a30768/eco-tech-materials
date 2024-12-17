@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: eco-tech-service
+  labels:
+    app: eco-tech
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 3000        # Porta exposta pelo serviço
+      protocol: TCP
+      targetPort: 3000    # Porta no contêiner
+      nodePort:         # Porta no nó (opcional, Minikube atribuirá automaticamente se omitido)
+  selector:
+    app: eco-tech
