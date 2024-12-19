@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: eco-tech
-        image: a30768/eco-tech-materials:latest # Substitua 'latest' pela tag correta da sua imagem, se necessário
+        image: a30768/eco-tech-materials:1 # Substitua 'latest' pela tag correta da sua imagem, se necessário
         imagePullPolicy: Never
         env:
           - name: DB_HOST
